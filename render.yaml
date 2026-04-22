@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: clic-campus-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 18
