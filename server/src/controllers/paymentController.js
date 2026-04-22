@@ -206,7 +206,7 @@ export async function receipt(req, res) {
   res.json({
     student_id: row.student_id,
     receipt_no: row.receipt_no,
-      title: process.env.VITE_APP_NAME || 'CLIC Campus',
+      title: process.env.APP_NAME || 'CLIC Campus',
       student_name: row.student_name,
       student_reg_no: row.student_reg_no,
       student_phone: row.student_phone,

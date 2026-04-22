@@ -12,10 +12,11 @@ const REFRESH_COOKIE = 'refreshToken';
 
 function cookieOptions(httpOnly, maxAgeMs) {
   const secure = process.env.COOKIE_SECURE === 'true';
+  const sameSite = process.env.COOKIE_SAME_SITE?.trim() || (secure ? 'none' : 'lax');
   return {
     httpOnly,
     secure,
-    sameSite: 'lax',
+    sameSite,
     path: '/',
     maxAge: maxAgeMs,
   };

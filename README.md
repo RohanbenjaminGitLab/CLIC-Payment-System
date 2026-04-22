@@ -1,35 +1,25 @@
 # CLIC Campus Student Payment & Course Management System
 
-Full-stack campus operations app: **React + Tailwind** frontend, **Node.js + Express** API, **MySQL** database, **JWT + bcrypt** authentication with **RBAC** (Admin / Manager / Staff).
+Full-stack campus operations app: **React + Vite** frontend, **Node.js + Express** API, and **MySQL** with JWT authentication, RBAC, validation, and Render-ready deployment structure.
 
-## Folder structure
+## Project structure
 
 ```
 CLIC PaymentSystem/
-├── client/                 # React (Vite) + Tailwind CSS
+├── client/                  # Frontend only
+│   ├── public/
 │   ├── src/
-│   │   ├── api.js          # Fetch helper (cookies + refresh)
-│   │   ├── context/        # Auth context
-│   │   ├── components/     # Layout, Sidebar, Navbar
-│   │   ├── pages/          # Feature screens
-│   │   ├── hooks/          # Inactivity logout
-│   │   ├── App.jsx
-│   │   └── main.jsx
+│   ├── .env.example
 │   └── package.json
-├── server/                 # Express API
+├── server/                  # Backend only
+│   ├── migrations/          # Startup-safe DB migrations
 │   ├── src/
-│   │   ├── index.js
-│   │   ├── config/db.js
-│   │   ├── routes/index.js
-│   │   ├── controllers/
-│   │   ├── middleware/
-│   │   ├── services/
-│   │   └── utils/
+│   ├── test/
+│   ├── .env.example
 │   └── package.json
-├── database/
-│   ├── schema.sql
-│   └── seed.sql
-├── .env.example
+├── database/                # Base schema + seed SQL
+├── render.yaml              # Render blueprint (API + static frontend)
+├── .gitignore
 └── README.md
 ```
 
@@ -50,10 +40,18 @@ mysql -u root -p clic_campus < database/seed.sql
 
 ```bash
 cd server
-copy ..\\.env.example .env
+copy .env.example .env
 ```
 
-Edit `server/.env`: set `DB_PASSWORD`, `JWT_SECRET` (long random string), and optionally `CLIENT_URL` (default `http://localhost:5173`). Never commit real `.env` files.
+Edit `server/.env`: set `DB_PASSWORD`, `JWT_SECRET`, and optionally `CLIENT_URL`. For cross-site Render cookies, set `COOKIE_SECURE=true` and `COOKIE_SAME_SITE=none`.
+
+### Run migrations
+
+```bash
+cd server
+npm install
+npm run migrate
+```
 
 ### Run API
 
@@ -83,7 +81,7 @@ npm run build
 npm run preview
 ```
 
-You can create `client/.env.production` from `client/.env.example` for Vercel deployment.
+You can create `client/.env.production` from `client/.env.example` for Render static hosting or any other frontend host.
 
 ## Sample logins (from seed)
 
@@ -114,15 +112,30 @@ Password rules for new users: **8+ characters**, uppercase, lowercase, number, s
 
 All `/api/*` routes expect the cookie session (or `Authorization: Bearer` for tools).
 
-## Production notes
+## Render deployment notes
 
-- Set `COOKIE_SECURE=true` and serve over HTTPS.
-- Use a strong `JWT_SECRET` and restrict MySQL user privileges.
-- Put the API behind a reverse proxy (nginx, etc.) and tune rate limits.
-- Recommended free hosting:
-  - Frontend: **Vercel**
-  - Backend: **Render**
-- Set `CLIENT_URL` on Render to your Vercel frontend URL.
-- Set `VITE_API_URL` on Vercel to your Render backend URL.
-- The frontend includes a 404 route and a fallback 500 error screen; the backend returns JSON 404/500 responses.
-- Do not run the legacy root migration scripts during hosting; the backend already executes startup migrations in `server/src/index.js`.
+- `render.yaml` includes:
+  - a **free web service** for the backend (`server/`)
+  - a **static site** for the frontend (`client/`)
+- Backend start command: `npm start`
+- Backend migrations run automatically at startup and can also be run manually with `npm run migrate`
+- Set these backend environment variables in Render:
+  - `JWT_SECRET`
+  - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
+  - `CLIENT_URL` = your frontend Render URL
+- Set these frontend environment variables in Render Static Site:
+  - `VITE_API_URL` = your backend Render URL
+
+## Free-tier hosting considerations
+
+- No persistent upload storage is used.
+- No background intervals or cron-like jobs are required.
+- Overdue installment state is refreshed during startup and relevant API requests.
+- Database connection pool is tuned for lower resource usage.
+
+## Security notes
+
+- JWT session cookies support secure cross-origin Render deployment.
+- Authentication and role-based access control remain enforced on protected routes.
+- Request validation has been tightened for auth, courses, batches, students, and payments.
+- The backend returns controlled JSON errors for invalid requests and server failures.

@@ -1,4 +1,5 @@
 import { query } from '../config/db.js';
+import { refreshOverdueInstallments } from '../services/installmentService.js';
 import { visibleStudentScope } from '../utils/staffVisibility.js';
 
 function staffStudentCheck(req, studentId) {
@@ -10,6 +11,7 @@ function staffParam(req, studentId) {
 }
 
 export async function listByStudent(req, res) {
+  await refreshOverdueInstallments();
   const studentId = req.params.studentId;
   let sql = `
     SELECT i.* FROM installments i
@@ -32,6 +34,7 @@ export async function listByStudent(req, res) {
 }
 
 export async function listAlerts(req, res) {
+  await refreshOverdueInstallments();
   const today = new Date().toISOString().slice(0, 10);
   let sql = `
     SELECT i.*, s.name AS student_name, s.reg_no AS student_reg_no, s.phone
@@ -62,6 +65,7 @@ function normalizePhone(phone) {
 }
 
 export async function whatsappReminders(req, res) {
+  await refreshOverdueInstallments();
   const today = new Date().toISOString().slice(0, 10);
   let sql = `
     SELECT i.id, i.student_id, i.due_date, i.installment_amount, i.paid_amount,

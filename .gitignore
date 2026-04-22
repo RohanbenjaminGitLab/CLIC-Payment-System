@@ -6,7 +6,5 @@ client/.env
 client/.env.local
 client/.env.production
 *.log
-server/uploads/*
-!server/uploads/.gitkeep
 node_modules/
 dist/

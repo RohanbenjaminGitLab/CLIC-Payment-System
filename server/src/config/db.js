@@ -11,7 +11,7 @@ export function getPool() {
       password: process.env.DB_PASSWORD || '',
       database: process.env.DB_NAME || 'clic_campus',
       waitForConnections: true,
-      connectionLimit: 10,
+      connectionLimit: Number(process.env.DB_CONNECTION_LIMIT || 5),
       queueLimit: 0,
     });
   }
