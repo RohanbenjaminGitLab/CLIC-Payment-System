@@ -16,10 +16,10 @@ if (jwtSecret.length < 32 || /^change-me/i.test(jwtSecret)) {
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import routes from './src/routes/index.js';
-import { apiLimiter } from './src/middleware/security.js';
-import { refreshOverdueInstallments } from './src/services/installmentService.js';
-import { runMigrations } from './migrations/index.js';
+import routes from './routes/index.js';
+import { apiLimiter } from './middleware/security.js';
+import { refreshOverdueInstallments } from './services/installmentService.js';
+import { runMigrations } from '../migrations/index.js';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -78,7 +78,7 @@ async function startServer() {
     console.log('Starting CLIC Campus API initialization...');
     
     // 1. Test Database Connection
-    const { testConnection } = await import('./src/config/db.js');
+    const { testConnection } = await import('./config/db.js');
     const dbOk = await testConnection();
     if (!dbOk) {
       console.error('FATAL: Could not establish database connection after multiple retries.');
