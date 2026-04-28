@@ -4,6 +4,8 @@ let pool;
 
 export function getPool() {
   if (!pool) {
+    const useSSL = process.env.DB_SSL === 'true' || process.env.NODE_ENV === 'production';
+    
     pool = mysql.createPool({
       host: process.env.DB_HOST || 'localhost',
       port: Number(process.env.DB_PORT || 3306),
@@ -15,6 +17,9 @@ export function getPool() {
       queueLimit: 0,
       enableKeepAlive: true,
       keepAliveInitialDelay: 10000,
+      ssl: useSSL ? {
+        rejectUnauthorized: false // Required for some cloud providers like Aiven/DigitalOcean
+      } : undefined
     });
   }
   return pool;
