@@ -19,17 +19,33 @@ async function raw(path, opts = {}) {
   if (!(rest.body instanceof FormData) && !headers['Content-Type']) {
     headers['Content-Type'] = 'application/json';
   }
-  const res = await fetch(`${base}${path}`, {
-    ...rest,
-    credentials: 'include',
-    headers,
-  });
-  if (res.status === 401 && !_retry) {
-    const r = await refreshSession();
-    if (r.ok) return raw(path, { ...opts, _retry: true });
+
+  // Cold start detection: if request takes > 1.5s, signal the UI
+  let wakeTimeout = setTimeout(() => {
+    window.dispatchEvent(new CustomEvent('server-wake-needed', { detail: { path } }));
+  }, 1500);
+
+  try {
+    const res = await fetch(`${base}${path}`, {
+      ...rest,
+      credentials: 'include',
+      headers,
+    });
+
+    clearTimeout(wakeTimeout);
+    window.dispatchEvent(new CustomEvent('server-ready'));
+
+    if (res.status === 401 && !_retry) {
+      const r = await refreshSession();
+      if (r.ok) return raw(path, { ...opts, _retry: true });
+    }
+    return res;
+  } catch (err) {
+    clearTimeout(wakeTimeout);
+    throw err;
   }
-  return res;
 }
+
 
 export async function api(path, opts = {}) {
   return raw(`/api${path}`, opts);

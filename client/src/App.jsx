@@ -13,6 +13,8 @@ import { BatchPayments } from './pages/BatchPayments';
 import { Audit } from './pages/Audit';
 import { Settings } from './pages/Settings';
 import { NotFound } from './pages/NotFound';
+import { ServerWakeupOverlay } from './components/ServerWakeupOverlay';
+
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -42,9 +44,12 @@ function Shell() {
 }
 
 export default function App() {
+
   return (
     <AuthProvider>
+      <ServerWakeupOverlay />
       <Routes>
+
         <Route path="/login" element={<Login />} />
         <Route element={<Shell />}>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

@@ -71,10 +71,35 @@ app.use((err, _req, res, _next) => {
   return res.status(500).json({ error: 'Internal server error' });
 });
 
-await runMigrations();
-await refreshOverdueInstallments();
-
 const port = Number(process.env.PORT || 5000);
-app.listen(port, () => {
-  console.log(`CLIC Campus API listening on port ${port}`);
-});
+
+async function startServer() {
+  try {
+    console.log('Starting CLIC Campus API initialization...');
+    
+    // 1. Test Database Connection
+    const { testConnection } = await import('./config/db.js');
+    const dbOk = await testConnection();
+    if (!dbOk) {
+      console.error('FATAL: Could not establish database connection after multiple retries.');
+      process.exit(1);
+    }
+
+    // 2. Run Migrations
+    await runMigrations();
+    
+    // 3. Status Refresh
+    await refreshOverdueInstallments();
+
+    // 4. Listen
+    app.listen(port, () => {
+      console.log(`CLIC Campus API listening on port ${port}`);
+    });
+  } catch (err) {
+    console.error('FAILED to start server:', err);
+    process.exit(1);
+  }
+}
+
+startServer();
+

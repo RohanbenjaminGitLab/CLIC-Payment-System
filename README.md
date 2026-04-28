@@ -86,8 +86,8 @@ You can create `client/.env.production` from `client/.env.example` for Render st
 ## Sample logins (from seed)
 
 | Role    | Email              | Password    |
-|---------|--------------------|------------|
-| Admin   | admin@clic.edu     | Admin@123  |
+|---------|--------------------|--- ---------|
+| Admin   | admin@clic.edu     | Admin@123 |
 | Manager | manager@clic.edu | Manager@123|
 | Staff   | staff@clic.edu   | Staff@123  |
 
@@ -112,26 +112,46 @@ Password rules for new users: **8+ characters**, uppercase, lowercase, number, s
 
 All `/api/*` routes expect the cookie session (or `Authorization: Bearer` for tools).
 
-## Render deployment notes
+## 🚀 Free Hosting Deployment Guide
 
-- `render.yaml` includes:
-  - a **free web service** for the backend (`server/`)
-  - a **static site** for the frontend (`client/`)
-- Backend start command: `npm start`
-- Backend migrations run automatically at startup and can also be run manually with `npm run migrate`
-- Set these backend environment variables in Render:
-  - `JWT_SECRET`
-  - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
-  - `CLIENT_URL` = your frontend Render URL
-- Set these frontend environment variables in Render Static Site:
-  - `VITE_API_URL` = your backend Render URL
+This project is optimized for **Render** (API) and **Vercel/Render** (Static Frontend).
 
-## Free-tier hosting considerations
+### 1. Database (Crucial)
+Render's free tier doesn't include MySQL. You **must** use an external provider. Recommended options:
+- **Aiven for MySQL** (Free tier, 1GB, highly reliable)
+- **Clever Cloud** (Free MySQL addon)
+- **TiDB Cloud** (MySQL-compatible Serverless tier)
 
-- No persistent upload storage is used.
-- No background intervals or cron-like jobs are required.
-- Overdue installment state is refreshed during startup and relevant API requests.
-- Database connection pool is tuned for lower resource usage.
+Once you have your connection string, set the `DB_*` variables in Render's environment settings.
+
+### 2. Backend Deployment (Render)
+1. Create a new **Web Service** on Render.
+2. Connect your GitHub repository.
+3. Set **Root Directory** to `server`.
+4. Render will automatically detect the settings from `render.yaml`.
+5. Add these **Environment Variables**:
+   - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
+   - `JWT_SECRET` (Random string, min 32 chars)
+   - `CLIENT_URL` (Your frontend URL, e.g., `https://clic-campus.vercel.app`)
+   - `COOKIE_SECURE=true`, `COOKIE_SAME_SITE=none`
+
+### 3. Frontend Deployment (Vercel or Render)
+**Vercel (Recommended):**
+1. Connect GitHub to Vercel.
+2. Set **Root Directory** to `client`.
+3. Add Environment Variable: `VITE_API_URL` (Your Render API URL).
+4. Vercel will use `vercel.json` for routing.
+
+**Render Static Site:**
+1. Create a new **Static Site** on Render.
+2. Set **Root Directory** to `client`.
+3. Add Environment Variable: `VITE_API_URL`.
+
+### ⚡ Free Tier Optimization Notes
+- **Cold Starts:** The backend sleeps after 15m. We've added a "Server Waking Up" UI that triggers automatically if the server takes >1.5s to respond.
+- **Robust Startup:** The API will retry database connections 5 times before failing, handling slow-starting external DBs.
+- **Resource Limits:** Database pool is limited to 5 connections to stay within free tier quotas.
+- **No Persistence:** Remember that `server/uploads/` is **not persistent** on Render Free Tier. For production images, use a cloud provider like Cloudinary.
 
 ## Security notes
 
@@ -139,3 +159,4 @@ All `/api/*` routes expect the cookie session (or `Authorization: Bearer` for to
 - Authentication and role-based access control remain enforced on protected routes.
 - Request validation has been tightened for auth, courses, batches, students, and payments.
 - The backend returns controlled JSON errors for invalid requests and server failures.
+
