@@ -78,6 +78,7 @@ app.use('/api', (_req, res) => {
 });
 
 
+// ... existing imports ...
 app.use((err, _req, res, _next) => {
   if (err?.message === 'CORS origin not allowed') {
     return res.status(403).json({ error: err.message });
@@ -86,6 +87,9 @@ app.use((err, _req, res, _next) => {
   console.error('Unhandled server error', err);
   return res.status(500).json({ error: 'Internal server error' });
 });
+
+// Export for Vercel
+export default app;
 
 const port = Number(process.env.PORT || 5000);
 
@@ -98,7 +102,8 @@ async function startServer() {
     const dbOk = await testConnection();
     if (!dbOk) {
       console.error('FATAL: Could not establish database connection after multiple retries.');
-      process.exit(1);
+      // In serverless, we might not want to exit(1) immediately if it's a transient error
+      if (process.env.NODE_ENV !== 'production') process.exit(1);
     }
 
     // 2. Run Migrations
@@ -107,15 +112,21 @@ async function startServer() {
     // 3. Status Refresh
     await refreshOverdueInstallments();
 
-    // 4. Listen
-    app.listen(port, () => {
-      console.log(`CLIC Campus API listening on port ${port}`);
-    });
+    // 4. Listen (Only if not in Vercel/serverless environment)
+    if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'production') {
+        app.listen(port, () => {
+          console.log(`CLIC Campus API listening on port ${port}`);
+        });
+    }
   } catch (err) {
     console.error('FAILED to start server:', err);
-    process.exit(1);
+    if (process.env.NODE_ENV !== 'production') process.exit(1);
   }
 }
 
-startServer();
+// Start server if running directly
+if (import.meta.url === `file://${process.argv[1]}` || process.env.NODE_ENV !== 'production') {
+    startServer();
+}
+
 
