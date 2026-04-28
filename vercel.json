@@ -18,8 +18,14 @@
     },
     {
       "src": "/(.*)",
-      "dest": "client/$1",
+      "dest": "/client/$1",
       "check": true
+    },
+    {
+      "src": "/(.*)",
+      "status": 404,
+      "dest": "/client/index.html"
     }
   ]
 }
+
