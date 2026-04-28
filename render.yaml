@@ -1,11 +1,12 @@
 services:
   - type: web
-    name: clic-campus-api
+    name: clic-campus-fullstack
     runtime: node
-    rootDir: server
-    buildCommand: npm ci
-    startCommand: npm start
     plan: free
+    buildCommand: |
+      cd client && npm ci && npm run build && cd ../server && npm ci
+    startCommand: |
+      cd server && NODE_ENV=production npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
@@ -14,15 +15,5 @@ services:
         value: true
       - key: COOKIE_SAME_SITE
         value: none
-  - type: static
-    name: clic-campus-client
-    rootDir: client
-    buildCommand: npm ci && npm run build
-    staticPublishPath: dist
-    envVars:
-      - key: NODE_VERSION
-        value: 20
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+      - key: NODE_ENV
+        value: production

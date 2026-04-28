@@ -56,11 +56,27 @@ app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 app.use('/api', apiLimiter, routes);
 
-app.get('/health', (_req, res) => res.json({ ok: true }));
+// Serve static files from the React app in production
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Check if we are in production and serve the client dist folder
+if (process.env.NODE_ENV === 'production') {
+  const clientDistPath = path.join(__dirname, '../../client/dist');
+  app.use(express.static(clientDistPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+} else {
+  app.get('/health', (_req, res) => res.json({ ok: true }));
+}
 
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'API route not found' });
 });
+
 
 app.use((err, _req, res, _next) => {
   if (err?.message === 'CORS origin not allowed') {

@@ -112,46 +112,32 @@ Password rules for new users: **8+ characters**, uppercase, lowercase, number, s
 
 All `/api/*` routes expect the cookie session (or `Authorization: Bearer` for tools).
 
-## 🚀 Free Hosting Deployment Guide
+## 🚀 Free Hosting Deployment Guide (Optimized)
 
-This project is optimized for **Render** (API) and **Vercel/Render** (Static Frontend).
+To save resources on free hosting, this project is now configured as a **Monolith**: the backend server serves both the API and the Frontend.
 
 ### 1. Database (Crucial)
 Render's free tier doesn't include MySQL. You **must** use an external provider. Recommended options:
-- **Aiven for MySQL** (Free tier, 1GB, highly reliable)
+- **Aiven for MySQL** (Free tier, highly reliable)
 - **Clever Cloud** (Free MySQL addon)
-- **TiDB Cloud** (MySQL-compatible Serverless tier)
 
-Once you have your connection string, set the `DB_*` variables in Render's environment settings.
-
-### 2. Backend Deployment (Render)
+### 2. Full-Stack Deployment (Render)
 1. Create a new **Web Service** on Render.
 2. Connect your GitHub repository.
-3. Set **Root Directory** to `server`.
+3. **DO NOT** set a Root Directory (leave it as the project root).
 4. Render will automatically detect the settings from `render.yaml`.
 5. Add these **Environment Variables**:
    - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
-   - `JWT_SECRET` (Random string, min 32 chars)
-   - `CLIENT_URL` (Your frontend URL, e.g., `https://clic-campus.vercel.app`)
+   - `JWT_SECRET` (Random string)
+   - `NODE_ENV=production`
    - `COOKIE_SECURE=true`, `COOKIE_SAME_SITE=none`
+6. Click **Deploy**.
 
-### 3. Frontend Deployment (Vercel or Render)
-**Vercel (Recommended):**
-1. Connect GitHub to Vercel.
-2. Set **Root Directory** to `client`.
-3. Add Environment Variable: `VITE_API_URL` (Your Render API URL).
-4. Vercel will use `vercel.json` for routing.
+### ⚡ Why this is better for Free Hosting:
+- **Single Service**: You only need to manage ONE Render service.
+- **No CORS Issues**: Since the frontend and backend are on the same URL, you won't have CORS or Cookie issues.
+- **Faster Loading**: The frontend is served instantly by the backend.
 
-**Render Static Site:**
-1. Create a new **Static Site** on Render.
-2. Set **Root Directory** to `client`.
-3. Add Environment Variable: `VITE_API_URL`.
-
-### ⚡ Free Tier Optimization Notes
-- **Cold Starts:** The backend sleeps after 15m. We've added a "Server Waking Up" UI that triggers automatically if the server takes >1.5s to respond.
-- **Robust Startup:** The API will retry database connections 5 times before failing, handling slow-starting external DBs.
-- **Resource Limits:** Database pool is limited to 5 connections to stay within free tier quotas.
-- **No Persistence:** Remember that `server/uploads/` is **not persistent** on Render Free Tier. For production images, use a cloud provider like Cloudinary.
 
 ## Security notes
 
