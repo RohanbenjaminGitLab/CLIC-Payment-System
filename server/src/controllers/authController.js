@@ -11,8 +11,11 @@ const ACCESS_COOKIE = 'accessToken';
 const REFRESH_COOKIE = 'refreshToken';
 
 function cookieOptions(httpOnly, maxAgeMs) {
-  const secure = process.env.COOKIE_SECURE === 'true';
+  // In production (Vercel/Render), cookies MUST be secure for HTTPS
+  const isProd = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+  const secure = process.env.COOKIE_SECURE === 'true' || isProd;
   const sameSite = process.env.COOKIE_SAME_SITE?.trim() || (secure ? 'none' : 'lax');
+  
   return {
     httpOnly,
     secure,

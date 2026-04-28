@@ -20,16 +20,29 @@ export function getPool() {
   return pool;
 }
 
-export async function testConnection(retries = 5, delay = 5000) {
+export async function testConnection(retries = 3, delay = 3000) {
   const p = getPool();
+  console.log(`Checking database connection (Host: ${process.env.DB_HOST || 'localhost'})...`);
+  
   for (let i = 0; i < retries; i++) {
     try {
       const conn = await p.getConnection();
       conn.release();
+      console.log('✅ Database connection established successfully.');
       return true;
     } catch (err) {
-      console.warn(`Database connection attempt ${i + 1} failed: ${err.message}`);
+      console.error(`❌ Database connection attempt ${i + 1} failed: ${err.message}`);
+      
+      if (err.code === 'ECONNREFUSED' && (process.env.DB_HOST === 'localhost' || !process.env.DB_HOST)) {
+        console.error('HINT: Your backend is trying to connect to localhost. If this is Vercel, you MUST set DB_HOST to your remote database URL in the dashboard.');
+      }
+      
+      if (err.code === 'ER_ACCESS_DENIED_ERROR') {
+        console.error('HINT: Access denied. Check your DB_USER and DB_PASSWORD environment variables.');
+      }
+
       if (i < retries - 1) {
+        console.log(`Retrying in ${delay / 1000}s...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }

@@ -25,16 +25,25 @@ const app = express();
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 
-const allowedOrigins = String(process.env.CLIENT_URL || 'http://localhost:5173')
+const allowedOrigins = String(process.env.CLIENT_URL || '')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
 const corsOptions = {
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    // 1. Allow if no origin (same-origin, tools like curl/Postman)
+    // 2. Allow if origin matches CLIENT_URL
+    // 3. Allow if origin is a vercel.app domain (for previews)
+    if (
+      !origin || 
+      allowedOrigins.includes(origin) || 
+      origin.endsWith('.vercel.app') ||
+      process.env.NODE_ENV !== 'production'
+    ) {
       return callback(null, true);
     }
+    console.warn(`Blocked CORS origin: ${origin}`);
     return callback(new Error('CORS origin not allowed'));
   },
   credentials: true,
@@ -124,8 +133,10 @@ async function startServer() {
   }
 }
 
-// Start server if running directly
-if (import.meta.url === `file://${process.argv[1]}` || process.env.NODE_ENV !== 'production') {
+// Start server initialization
+const isVercel = process.env.VERCEL === '1';
+
+if (import.meta.url === `file://${process.argv[1]}` || isVercel || process.env.NODE_ENV !== 'production') {
     startServer();
 }
 
