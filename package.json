@@ -1,0 +1,13 @@
+{
+  "name": "clic-campus-root",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "cd client && npm install && npm run build && cd ../server && npm install",
+    "start": "cd server && npm start"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}
