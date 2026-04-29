@@ -23,8 +23,12 @@ export async function authenticate(req, res, next) {
       email: user.email,
     };
     next();
-  } catch {
-    return res.status(401).json({ error: 'Invalid or expired session' });
+  } catch (err) {
+    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Invalid or expired session' });
+    }
+    console.error('Authentication middleware error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 

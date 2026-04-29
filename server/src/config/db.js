@@ -25,7 +25,7 @@ export function getPool() {
   return pool;
 }
 
-export async function testConnection(retries = 3, delay = 3000) {
+export async function testConnection(retries = 2, delay = 1000) {
   const p = getPool();
   console.log(`Checking database connection (Host: ${process.env.DB_HOST || 'localhost'})...`);
   

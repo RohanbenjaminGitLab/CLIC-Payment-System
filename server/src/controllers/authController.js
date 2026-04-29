@@ -14,7 +14,7 @@ function cookieOptions(httpOnly, maxAgeMs) {
   // In production (Vercel/Render), cookies MUST be secure for HTTPS
   const isProd = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
   const secure = process.env.COOKIE_SECURE === 'true' || isProd;
-  const sameSite = process.env.COOKIE_SAME_SITE?.trim() || (secure ? 'none' : 'lax');
+  const sameSite = process.env.COOKIE_SAME_SITE?.trim() || 'lax';
   
   return {
     httpOnly,
@@ -126,42 +126,47 @@ export async function login(req, res) {
 }
 
 export async function refresh(req, res) {
-  const raw = req.cookies?.[REFRESH_COOKIE];
-  if (!raw) return res.status(401).json({ error: 'No refresh token' });
-  const refreshHash = hashToken(raw);
-  const rows = await query(
-    `SELECT rt.user_id, u.email, u.role, u.is_active
-     FROM refresh_tokens rt
-     JOIN users u ON u.id = rt.user_id
-     WHERE rt.token_hash = ? AND rt.expires_at > NOW()`,
-    [refreshHash]
-  );
-  const row = rows[0];
-  if (!row || !row.is_active) {
-    res.clearCookie(ACCESS_COOKIE, { path: '/' });
-    res.clearCookie(REFRESH_COOKIE, { path: '/' });
-    return res.status(401).json({ error: 'Invalid refresh token' });
+  try {
+    const raw = req.cookies?.[REFRESH_COOKIE];
+    if (!raw) return res.status(401).json({ error: 'No refresh token' });
+    const refreshHash = hashToken(raw);
+    const rows = await query(
+      `SELECT rt.user_id, u.email, u.role, u.is_active
+       FROM refresh_tokens rt
+       JOIN users u ON u.id = rt.user_id
+       WHERE rt.token_hash = ? AND rt.expires_at > NOW()`,
+      [refreshHash]
+    );
+    const row = rows[0];
+    if (!row || !row.is_active) {
+      res.clearCookie(ACCESS_COOKIE, { path: '/' });
+      res.clearCookie(REFRESH_COOKIE, { path: '/' });
+      return res.status(401).json({ error: 'Invalid refresh token' });
+    }
+
+    await query('DELETE FROM refresh_tokens WHERE token_hash = ?', [refreshHash]);
+
+    const access = signAccessToken({
+      sub: row.user_id,
+      role: normalizeRole(row.role),
+      email: row.email,
+    });
+    const newRaw = generateRefreshToken();
+    const newHash = hashToken(newRaw);
+    const days = Number(process.env.JWT_REFRESH_DAYS || 7);
+    await query(
+      `INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? DAY))`,
+      [row.user_id, newHash, days]
+    );
+
+    res.cookie(ACCESS_COOKIE, access, cookieOptions(true, 15 * 60 * 1000));
+    res.cookie(REFRESH_COOKIE, newRaw, cookieOptions(true, days * 24 * 60 * 60 * 1000));
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('Refresh error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
   }
-
-  await query('DELETE FROM refresh_tokens WHERE token_hash = ?', [refreshHash]);
-
-  const access = signAccessToken({
-    sub: row.user_id,
-    role: normalizeRole(row.role),
-    email: row.email,
-  });
-  const newRaw = generateRefreshToken();
-  const newHash = hashToken(newRaw);
-  const days = Number(process.env.JWT_REFRESH_DAYS || 7);
-  await query(
-    `INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? DAY))`,
-    [row.user_id, newHash, days]
-  );
-
-  res.cookie(ACCESS_COOKIE, access, cookieOptions(true, 15 * 60 * 1000));
-  res.cookie(REFRESH_COOKIE, newRaw, cookieOptions(true, days * 24 * 60 * 60 * 1000));
-
-  return res.json({ ok: true });
 }
 
 export async function logout(req, res) {

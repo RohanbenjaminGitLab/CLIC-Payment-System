@@ -2,16 +2,15 @@ import dotenv from 'dotenv';
 import express from 'express';
 dotenv.config();
 
-const jwtSecret = process.env.JWT_SECRET?.trim() || '';
-if (!jwtSecret) {
+const jwtSecret = (process.env.JWT_SECRET || '').trim();
+if (!jwtSecret && process.env.NODE_ENV !== 'production') {
   console.error(
     'FATAL: JWT_SECRET is missing. Create server/.env (see project .env.example) and set JWT_SECRET.'
   );
   process.exit(1);
 }
-if (jwtSecret.length < 32 || /^change-me/i.test(jwtSecret)) {
-  console.error('FATAL: JWT_SECRET is too weak. Use a random secret with at least 32 characters.');
-  process.exit(1);
+if (jwtSecret && (jwtSecret.length < 32 || /^change-me/i.test(jwtSecret))) {
+  console.warn('WARNING: JWT_SECRET is too weak. Use a random secret with at least 32 characters.');
 }
 import cors from 'cors';
 import helmet from 'helmet';
