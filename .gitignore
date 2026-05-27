@@ -1,0 +1,16 @@
+.env
+.env.local
+server/.env
+server/.env.local
+client/.env
+client/.env.local
+client/.env.production
+*.log
+node_modules/
+dist/
+database/
+server/uploads/
+.DS_Store
+*.sql
+*.sqlite
+*.db

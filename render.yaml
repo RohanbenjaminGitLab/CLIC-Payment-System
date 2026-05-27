@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: clic-campus-fullstack
+    runtime: node
+    plan: free
+    buildCommand: |
+      cd client && npm ci && npm run build && cd ../server && npm ci
+    startCommand: |
+      cd server && NODE_ENV=production npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: COOKIE_SECURE
+        value: true
+      - key: COOKIE_SAME_SITE
+        value: none
+      - key: NODE_ENV
+        value: production
