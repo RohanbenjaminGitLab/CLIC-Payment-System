@@ -110,8 +110,8 @@ async function startServer() {
     const dbOk = await testConnection();
     if (!dbOk) {
       console.error('FATAL: Could not establish database connection after multiple retries.');
-      // In serverless, we might not want to exit(1) immediately if it's a transient error
-      if (process.env.NODE_ENV !== 'production') process.exit(1);
+      // In a long-running container, failing to connect to the DB on startup should exit so the container can restart.
+      if (process.env.VERCEL !== '1') process.exit(1);
     }
 
     // 2. Run Migrations
@@ -121,14 +121,14 @@ async function startServer() {
     await refreshOverdueInstallments();
 
     // 4. Listen (Only if not in Vercel/serverless environment)
-    if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'production') {
+    if (process.env.VERCEL !== '1') {
         app.listen(port, () => {
           console.log(`CLIC Campus API listening on port ${port}`);
         });
     }
   } catch (err) {
     console.error('FAILED to start server:', err);
-    if (process.env.NODE_ENV !== 'production') process.exit(1);
+    if (process.env.VERCEL !== '1') process.exit(1);
   }
 }
 
